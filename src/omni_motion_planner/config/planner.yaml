@@ -1,0 +1,59 @@
+# omni_motion_planner: Kino A* -> MINCO -> MPPI/MPC
+# 车体 0.54x0.54 方形, 外接圆半径 ~0.38m
+/**:
+  ros__parameters:
+    controller: mppi              # mppi | mpc (launch 参数 controller:= 覆盖)
+    global_frame: map
+    robot_frame: base_link
+    goal_tolerance: 0.15          # 到 MINCO 轨迹终点的距离 (m)
+    replan_distance: 0.8          # 偏离参考轨迹超过此值就重规划 (m)
+
+    kino:
+      robot_radius: 0.35
+      max_vel: 0.8
+      max_acc: 1.0
+      max_omega: 1.0
+      dt: 0.5
+      n_acc: 3
+      n_omega: 5
+      goal_tol_xy: 0.2
+      goal_tol_theta: 3.2         # > pi: 不约束终点朝向
+      lambda: 0.5
+      lambda_obs: 2.0
+      obs_decay: 0.2
+      xy_resolution: 0.2          # 状态去重格 (ESDF 是 0.05, 太细会让搜索爆炸)
+      h_weight: 3.0               # h(米) -> 与 g(秒) 同量级并略贪心
+      max_nodes: 300000
+
+    minco:
+      w_smooth: 1.0
+      w_collision: 50.0
+      w_length: 1.0
+      safe_distance: 0.5
+      max_vel: 0.6                # 轨迹时间参数化用的匀速
+      max_iters: 200
+      learning_rate: 0.01
+      converge_threshold: 1.0e-6
+
+    tracking:                     # MPPI / MPC 共用
+      horizon: 20
+      dt: 0.05                    # 同时是控制周期 (20Hz)
+      max_vel: 0.8
+      max_omega: 1.5
+      max_acc: 2.0
+      max_alpha: 3.0
+      w_pos: 1.0
+      w_theta: 0.3
+      w_vel: 0.1
+      w_delta_vel: 0.5
+      w_delta_omega: 0.5
+
+    mppi:
+      num_samples: 1024
+      sigma_v: 0.2
+      sigma_omega: 0.4
+      lambda: 0.3
+
+    mpc:
+      max_iters: 10
+      learning_rate: 0.1

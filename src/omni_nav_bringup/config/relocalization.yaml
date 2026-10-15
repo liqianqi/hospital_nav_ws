@@ -1,0 +1,40 @@
+# gicp_relocalization (来自 nav_ws, 多高度层 FFT 全局搜索 + small_gicp 精配/跟踪)
+# 参数沿用 nav_ws/src/nav_bringup/launch/localization.launch.py 的实车值, 仅改输入话题/线程
+gicp_relocalization:
+  ros__parameters:
+    num_threads: 8
+    num_neighbors: 10
+    global_leaf_size: 0.20
+    registered_leaf_size: 0.20
+    max_dist_sq: 0.36
+    gicp_max_iterations: 50
+    gicp_max_consecutive_failures: 5    # 实车是 1; 进入建图时没扫到的房间时, 偶发不收敛不应立刻判丢
+    global:
+      min_accum_sec: 3.0
+      retry_period_sec: 5.0
+      z_layers: [0.3, 0.8, 1.3, 1.8, 2.3]   # map/odom 系高度 (地面 z≈0)
+      grid_resolution: 0.10
+      yaw_step_deg: 2.0
+      match_threshold: 0.75            # 0.85 时在建图未覆盖的房间门口(扫描有一部分不在地图里)实测最佳仅 0.80, 永远定位不上; 候选仍需过 GICP 验证
+      top_k: 12
+      peaks_per_yaw: 3
+      peak_window_cells: 11
+      candidate_min_translation: 0.7
+      candidate_min_yaw_deg: 8.0
+      min_occupied_cells: 1200
+      num_threads: 16
+    validation_max_dist: 0.30
+    candidate_min_inlier_ratio: 0.65
+    candidate_max_rmse: 0.22
+    candidate_ambiguity_ratio: 0.99
+    candidate_max_correction_translation: 0.75
+    candidate_max_correction_yaw_deg: 10.0
+    tracking_min_inlier_ratio: 0.30
+    tracking_max_rmse: 0.35
+    tracking_max_jump_translation: 0.40
+    tracking_max_jump_yaw_deg: 5.0
+    force_planar: true
+    map_frame: map
+    odom_frame: odom
+    robot_base_frame: base_link
+    input_cloud_topic: /lio/cloud_registered

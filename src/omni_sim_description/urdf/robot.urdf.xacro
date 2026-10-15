@@ -1,0 +1,120 @@
+<?xml version="1.0"?>
+<!--
+  仿真用全向底盘 (POKE 底盘, 45° X 型 6 寸全向轮, 来自 nav_ws) + 双 Livox Mid360 + Mid360 内置 IMU
+
+  TF: base_link ─┬─ updownbase_urdf_asm (底盘网格 + 4 个全向轮)
+                 ├─ livox_frame   (前右 Mid360, 主雷达, Point-LIO 用它的内置 IMU)
+                 │    └─ imu_link
+                 └─ livox_frame_2 (后左 Mid360)
+
+  雷达安装: 与 nav_ws 的 CAD 一致, 两台对角放, 顶面相对水平外倾 25°(+X 朝车体中心/上坡方向)
+    前右: xyz=( 0.1435, -0.1437, 0.2752) yaw=135°
+    后左: xyz=(-0.1435,  0.1437, 0.2752) yaw=-45°
+  仿真里用 CAD 名义值; 实车标定值见 nav_ws/src/nav_bringup/urdf/robot.urdf.xacro
+
+  Gazebo 里的雷达: gpu_lidar 50Hz 子帧 (Mid360 FOV: 360° x [-7°, 52°]),
+  由 hospital_sim/livox_sim_merger 合并成 10Hz Livox CustomMsg (带逐点时间戳, 两雷达合并)
+-->
+<robot name="omni_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:arg name="lidar_hz" default="50"/>
+  <xacro:arg name="lidar_h_samples" default="360"/>
+  <xacro:arg name="lidar_v_samples" default="32"/>
+
+  <xacro:include filename="$(find omni_sim_description)/urdf/chassis.urdf.xacro"/>
+
+  <xacro:property name="lidar_tilt" value="${-25.0 * pi / 180.0}"/>
+  <xacro:property name="lidar_z" value="0.2752"/>
+
+  <xacro:macro name="mid360" params="frame topic x y yaw">
+    <link name="${frame}"/>
+    <joint name="base_link_to_${frame}" type="fixed">
+      <parent link="base_link"/>
+      <child link="${frame}"/>
+      <origin xyz="${x} ${y} ${lidar_z}" rpy="0 ${lidar_tilt} ${yaw}"/>
+    </joint>
+    <gazebo reference="${frame}">
+      <sensor name="${frame}_sensor" type="gpu_lidar">
+        <topic>${topic}</topic>
+        <gz_frame_id>${frame}</gz_frame_id>
+        <update_rate>$(arg lidar_hz)</update_rate>
+        <always_on>true</always_on>
+        <visualize>false</visualize>
+        <lidar>
+          <scan>
+            <horizontal>
+              <samples>$(arg lidar_h_samples)</samples>
+              <resolution>1</resolution>
+              <min_angle>${-pi}</min_angle>
+              <max_angle>${pi}</max_angle>
+            </horizontal>
+            <vertical>
+              <samples>$(arg lidar_v_samples)</samples>
+              <resolution>1</resolution>
+              <min_angle>${-7.0 * pi / 180.0}</min_angle>
+              <max_angle>${52.0 * pi / 180.0}</max_angle>
+            </vertical>
+          </scan>
+          <range>
+            <min>0.1</min>
+            <max>40.0</max>
+            <resolution>0.002</resolution>
+          </range>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.015</stddev>
+          </noise>
+        </lidar>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:mid360 frame="livox_frame"   topic="/gz/livox_front_right" x="0.1435"  y="-0.1437" yaw="${0.75 * pi}"/>
+  <xacro:mid360 frame="livox_frame_2" topic="/gz/livox_back_left"   x="-0.1435" y="0.1437"  yaw="${-0.25 * pi}"/>
+
+  <!-- Mid360 内置 IMU (Livox 官方内部外参, 与 nav_ws 一致). 输出 m/s^2 (真机驱动输出 g) -->
+  <link name="imu_link"/>
+  <joint name="livox_to_imu" type="fixed">
+    <parent link="livox_frame"/>
+    <child link="imu_link"/>
+    <origin xyz="0.011 0.02329 -0.04412" rpy="0 0 0"/>
+  </joint>
+  <gazebo reference="imu_link">
+    <sensor name="mid360_imu" type="imu">
+      <topic>/gz/livox_imu</topic>
+      <gz_frame_id>imu_link</gz_frame_id>
+      <update_rate>200</update_rate>
+      <always_on>true</always_on>
+      <imu>
+        <angular_velocity>
+          <x><noise type="gaussian"><mean>0</mean><stddev>0.002</stddev><bias_mean>0.0005</bias_mean><bias_stddev>0.0001</bias_stddev></noise></x>
+          <y><noise type="gaussian"><mean>0</mean><stddev>0.002</stddev><bias_mean>0.0005</bias_mean><bias_stddev>0.0001</bias_stddev></noise></y>
+          <z><noise type="gaussian"><mean>0</mean><stddev>0.002</stddev><bias_mean>0.0005</bias_mean><bias_stddev>0.0001</bias_stddev></noise></z>
+        </angular_velocity>
+        <linear_acceleration>
+          <x><noise type="gaussian"><mean>0</mean><stddev>0.02</stddev><bias_mean>0.01</bias_mean><bias_stddev>0.001</bias_stddev></noise></x>
+          <y><noise type="gaussian"><mean>0</mean><stddev>0.02</stddev><bias_mean>0.01</bias_mean><bias_stddev>0.001</bias_stddev></noise></y>
+          <z><noise type="gaussian"><mean>0</mean><stddev>0.02</stddev><bias_mean>0.01</bias_mean><bias_stddev>0.001</bias_stddev></noise></z>
+        </linear_acceleration>
+      </imu>
+    </sensor>
+  </gazebo>
+
+  <gazebo>
+    <!-- 理想全向运动: 直接给底盘 body 速度 (vx, vy, wz). 轮速逆解见 hospital_sim/omni_wheel_kinematics.py -->
+    <plugin filename="gz-sim-velocity-control-system" name="gz::sim::systems::VelocityControl">
+      <topic>/gz/cmd_vel</topic>
+    </plugin>
+    <!-- 真值: world -> base_link, 用于评估 Point-LIO / 重定位误差 -->
+    <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
+      <odom_frame>world</odom_frame>
+      <robot_base_frame>base_link</robot_base_frame>
+      <dimensions>3</dimensions>
+      <odom_publish_frequency>50</odom_publish_frequency>
+      <odom_topic>/gz/ground_truth</odom_topic>
+      <tf_topic>/gz/ground_truth_tf</tf_topic>
+    </plugin>
+  </gazebo>
+
+</robot>

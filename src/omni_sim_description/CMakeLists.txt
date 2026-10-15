@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.8)
+project(omni_sim_description)
+find_package(ament_cmake REQUIRED)
+install(DIRECTORY urdf meshes DESTINATION share/${PROJECT_NAME})
+install(PROGRAMS scripts/make_sim_chassis.py scripts/urdf_to_sim_sdf.py DESTINATION lib/${PROJECT_NAME})
+ament_package()

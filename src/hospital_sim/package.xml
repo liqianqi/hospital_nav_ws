@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>hospital_sim</name>
+  <version>0.1.0</version>
+  <description>AWS hospital world on gz sim Harmonic with a dual-Mid360 omni robot; Livox-style sim lidar merger</description>
+  <maintainer email="ncstcrt1024@gmail.com">ubuntu</maintainer>
+  <license>MIT</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rclcpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_eigen</depend>
+  <depend>livox_ros_driver2</depend>
+  <exec_depend>rclpy</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>ros_gz_sim</exec_depend>
+  <exec_depend>ros_gz_bridge</exec_depend>
+  <exec_depend>robot_state_publisher</exec_depend>
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>omni_sim_description</exec_depend>
+  <export><build_type>ament_cmake</build_type></export>
+</package>

@@ -1,0 +1,11 @@
+livox_sim_merger:
+  ros__parameters:
+    main_frame: livox_frame          # 主雷达 (前右), Point-LIO 用它 + 其内置 IMU
+    base_frame: base_link
+    input_topics: ["/livox/front_right_raw", "/livox/back_left_raw"]
+    frame_period: 0.1                # 合并后 10Hz, 与 Mid360 一致
+    points_per_subscan: 4000         # 由 sim.launch 按 200000/lidar_hz 覆盖 (Mid360 ~200k pts/s/台)
+    scan_lines: 4                    # Mid360 line 0..3
+    min_range: 0.1
+    self_filter_box: [-0.30, 0.30, -0.30, 0.30, -0.10, 0.60]   # base_link 下车体包围盒, 去自遮挡
+    max_wait: 0.3

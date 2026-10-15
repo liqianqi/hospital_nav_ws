@@ -1,0 +1,82 @@
+# Point-LIO (LihanChen2004/Point-LIO, ROS2) —— 仿真双 Mid360 合并 + 前右 Mid360 内置 IMU
+# 与 point_lio/config/mid360.yaml 的区别见行尾 [sim]
+/**:
+    ros__parameters:
+        use_imu_as_input: False
+        prop_at_freq_of_imu: True
+        check_satu: True
+        init_map_size: 10
+        point_filter_num: 1                     # [sim] 合并后 ~20k 点/帧 (merger 已减半, 等效原来的 40k/2)
+        space_down_sample: True
+        filter_size_surf: 0.2                   # [sim] 室内走廊, 比默认 0.5 细
+        filter_size_map: 0.2
+        ivox_nearby_type: 18                    # [sim] 配合 ivox_grid_resolution 0.5, 见下
+        runtime_pos_log_enable: False
+
+        common:
+            lid_topic: "/livox/lidar"
+            imu_topic: "/livox/imu"
+            con_frame: False
+            con_frame_num: 1
+            cut_frame: False
+            cut_frame_time_interval: 0.1
+            time_diff_lidar_to_imu: 0.0
+
+        prior_pcd:
+            enable: False
+            prior_pcd_map_path: ""
+            init_pose: [ 0.0, 0.0, 0.0 ]
+
+        preprocess:
+            lidar_type: 1                       # Livox CustomMsg
+            scan_line: 4
+            timestamp_unit: 3
+            blind: 0.3                          # [sim] 车体自遮挡已在 livox_sim_merger 里按包围盒滤掉
+
+        mapping:
+            imu_en: True
+            extrinsic_est_en: False
+            imu_time_inte: 0.005                # 200Hz
+            lidar_time_inte: 0.1
+            satu_acc: 30.0                      # [sim] gz IMU 单位 m/s^2 (≈3g)
+            satu_gyro: 35.0
+            acc_norm: 9.81                      # [sim] m/s^2; 真机 Livox 驱动输出 g, 用 1.0
+            lidar_meas_cov: 0.01
+            acc_cov_output: 500.0
+            gyr_cov_output: 1000.0
+            b_acc_cov: 0.0001
+            b_gyr_cov: 0.0001
+            imu_meas_acc_cov: 0.01
+            imu_meas_omg_cov: 0.01
+            gyr_cov_input: 0.01
+            acc_cov_input: 0.1
+            plane_thr: 0.1
+            match_s: 81.0
+            # [sim] 原 2.0 + nearby 6: 每次近邻查询线性扫 7 个 2m 立方格内全部点, 地图体素 0.2 时
+            # 计算量过大, 长时间运行后在门口等密集处单帧超 0.1s, 输出滞后 0.6s →
+            # collision_monitor TF 外推失败刹车, Nav2 卡住。0.5 + 18 邻格 (FAST-LIO2 标准) 实测滞后减半
+            ivox_grid_resolution: 0.5
+            gravity: [ 0.0, 0.0, -9.810 ]
+            gravity_init: [ 0.0, 0.0, -9.810 ]
+            # 雷达(livox_frame) 在 IMU(imu_link) 系下的位姿 = Livox 官方内部外参
+            extrinsic_T: [ -0.011, -0.02329, 0.04412 ]
+            extrinsic_R: [ 1.0, 0.0, 0.0,
+                           0.0, 1.0, 0.0,
+                           0.0, 0.0, 1.0 ]
+
+        odometry:
+            # [sim] 必须 False: True 时每个点组更新后都发一次 odom, 体素降采样把时间戳打散后
+            # 实测 ~1900Hz (odom + adapter 的 TF 同频), Point-LIO 处理跟不上(输出滞后 0.6s),
+            # collision_monitor 因 odom->base_link 外推失败持续刹停, Nav2 原地 spin。
+            # False 时每帧(10Hz)发一次, 时间戳为帧末。
+            publish_odometry_without_downsample: False
+
+        publish:
+            path_en: False
+            scan_publish_en: True
+            scan_bodyframe_pub_en: False
+            tf_send_en: False                   # [sim] TF 由 lio_odom_adapter 统一发 odom->base_link
+
+        pcd_save:
+            pcd_save_en: False                  # 地图由 lio_odom_adapter 在 odom 系累积保存
+            interval: -1

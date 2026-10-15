@@ -1,0 +1,30 @@
+cmake_minimum_required(VERSION 3.8)
+project(omni_nav_bringup)
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+set(CMAKE_CXX_STANDARD 17)
+# 导出 compile_commands.json，给 clangd/IDE 用
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_eigen REQUIRED)
+find_package(pcl_conversions REQUIRED)
+find_package(PCL REQUIRED COMPONENTS common io filters)
+
+add_executable(lio_odom_adapter src/lio_odom_adapter.cpp)
+target_include_directories(lio_odom_adapter PRIVATE ${PCL_INCLUDE_DIRS})
+target_link_libraries(lio_odom_adapter ${PCL_LIBRARIES})
+ament_target_dependencies(lio_odom_adapter rclcpp nav_msgs sensor_msgs geometry_msgs std_srvs
+  tf2_ros tf2_eigen pcl_conversions)
+install(TARGETS lio_odom_adapter DESTINATION lib/${PROJECT_NAME})
+
+install(PROGRAMS scripts/pcd_to_gridmap.py scripts/gt_evaluator.py DESTINATION lib/${PROJECT_NAME})
+install(DIRECTORY launch config rviz maps DESTINATION share/${PROJECT_NAME})
+ament_package()

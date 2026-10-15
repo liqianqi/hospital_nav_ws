@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>gicp_relocalization</name>
+  <version>1.0.0</version>
+  <description>
+    C++ 自动全局定位（多层 FFT top-K + GICP 验证）与持续精配准跟踪，
+    发布 map -&gt; odom TF; 同时支持 RViz 手动 /initialpose。
+  </description>
+  <maintainer email="ubuntu@todo.todo">ubuntu</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>rclcpp_components</depend>
+  <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>tf2_ros</depend>
+  <depend>tf2_eigen</depend>
+  <depend>pcl_conversions</depend>
+  <depend>libomp-dev</depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

@@ -1,0 +1,39 @@
+# ros_gz_bridge: gz <-> ROS 2
+- ros_topic_name: /clock
+  gz_topic_name: /clock
+  ros_type_name: rosgraph_msgs/msg/Clock
+  gz_type_name: gz.msgs.Clock
+  direction: GZ_TO_ROS
+
+# 两台 Mid360 的 50Hz 子帧 -> livox_sim_merger
+- ros_topic_name: /livox/front_right_raw
+  gz_topic_name: /gz/livox_front_right/points
+  ros_type_name: sensor_msgs/msg/PointCloud2
+  gz_type_name: gz.msgs.PointCloudPacked
+  direction: GZ_TO_ROS
+- ros_topic_name: /livox/back_left_raw
+  gz_topic_name: /gz/livox_back_left/points
+  ros_type_name: sensor_msgs/msg/PointCloud2
+  gz_type_name: gz.msgs.PointCloudPacked
+  direction: GZ_TO_ROS
+
+# 前右 Mid360 内置 IMU (frame imu_link, 单位 m/s^2)
+- ros_topic_name: /livox/imu
+  gz_topic_name: /gz/livox_imu
+  ros_type_name: sensor_msgs/msg/Imu
+  gz_type_name: gz.msgs.IMU
+  direction: GZ_TO_ROS
+
+# 底盘速度指令: /cmd_vel 经 omni_wheel_kinematics 加速度限幅(模拟电机动态)后 -> gz
+- ros_topic_name: /sim/cmd_vel_actual
+  gz_topic_name: /gz/cmd_vel
+  ros_type_name: geometry_msgs/msg/Twist
+  gz_type_name: gz.msgs.Twist
+  direction: ROS_TO_GZ
+
+# 真值 world -> base_link (只做评估, 不进 TF 树)
+- ros_topic_name: /ground_truth/odom
+  gz_topic_name: /gz/ground_truth
+  ros_type_name: nav_msgs/msg/Odometry
+  gz_type_name: gz.msgs.Odometry
+  direction: GZ_TO_ROS

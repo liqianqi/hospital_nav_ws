@@ -1,0 +1,2 @@
+CompileFlags:
+  Add: [-std=c++17, -I/home/ubuntu/AI/nav_ws/src/omni_motion_planner/include]
